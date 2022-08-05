@@ -1,92 +1,96 @@
+import 'package:creator/creator.dart';
 import 'package:flutter/material.dart';
 import 'package:game_template/main.dart';
+import 'package:game_template/src/audio/audio_controller.dart';
 import 'package:game_template/src/games_services/games_services.dart';
+import 'package:game_template/src/settings/settings_controller.dart';
 import 'package:game_template/src/style/palette.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../audio/sounds.dart';
 import '../style/responsive_screen.dart';
 
-class MainMenuScreen extends ConsumerWidget {
+class MainMenuScreen extends StatelessWidget {
   const MainMenuScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final GamesServicesController? gamesServicesController =
-        gamesServicesControllerProvider != null ? ref.watch(gamesServicesControllerProvider!) : null;
+  Widget build(BuildContext context) {
+    final GamesServicesController? gamesServicesController = gamesServicesControllerCreator != null
+        ? CreatorGraphData.of(context).ref.watch(gamesServicesControllerCreator!)
+        : null;
 
-    return Scaffold(
-      backgroundColor: ref.watch(paletteProvider).backgroundMain,
-      body: ResponsiveScreen(
-        mainAreaProminence: 0.45,
-        squarishMainArea: Center(
-          child: Transform.rotate(
-            angle: -0.1,
-            child: const Text(
-              'Flutter Game Template!',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Permanent Marker',
-                fontSize: 55,
-                height: 1,
+    return Watcher((context, ref, _) {
+      return Scaffold(
+        backgroundColor: ref.watch(paletteCreator).backgroundMain,
+        body: ResponsiveScreen(
+          mainAreaProminence: 0.45,
+          squarishMainArea: Center(
+            child: Transform.rotate(
+              angle: -0.1,
+              child: const Text(
+                'Flutter Game Template!',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'Permanent Marker',
+                  fontSize: 55,
+                  height: 1,
+                ),
               ),
             ),
           ),
-        ),
-        rectangularMenuArea: Column(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            ElevatedButton(
-              onPressed: () {
-                ref.read(audioControllerProvider).playSfx(SfxType.buttonTap);
-                GoRouter.of(context).go('/play');
-              },
-              child: const Text('Play'),
-            ),
-            _gap,
-            if (gamesServicesController != null) ...[
-              _hideUntilReady(
-                ready: gamesServicesController.signedIn,
-                child: ElevatedButton(
-                  onPressed: () => gamesServicesController.showAchievements(),
-                  child: const Text('Achievements'),
+          rectangularMenuArea: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              ElevatedButton(
+                onPressed: () {
+                  AudioController.playSfx(ref, type: SfxType.buttonTap);
+                  GoRouter.of(context).go('/play');
+                },
+                child: const Text('Play'),
+              ),
+              _gap,
+              if (gamesServicesController != null) ...[
+                _hideUntilReady(
+                  ready: gamesServicesController.signedIn,
+                  child: ElevatedButton(
+                    onPressed: () => gamesServicesController.showAchievements(),
+                    child: const Text('Achievements'),
+                  ),
+                ),
+                _gap,
+                _hideUntilReady(
+                  ready: gamesServicesController.signedIn,
+                  child: ElevatedButton(
+                    onPressed: () => gamesServicesController.showLeaderboard(),
+                    child: const Text('Leaderboard'),
+                  ),
+                ),
+                _gap,
+              ],
+              ElevatedButton(
+                onPressed: () => GoRouter.of(context).go('/settings'),
+                child: const Text('Settings'),
+              ),
+              _gap,
+              Padding(
+                padding: const EdgeInsets.only(top: 32),
+                child: Watcher(
+                  (context, ref, child) {
+                    return IconButton(
+                      onPressed: () => SettingsController.toggleMuted(ref),
+                      icon: Icon(ref.watch(SettingsController.muted) ? Icons.volume_off : Icons.volume_up),
+                    );
+                  },
                 ),
               ),
               _gap,
-              _hideUntilReady(
-                ready: gamesServicesController.signedIn,
-                child: ElevatedButton(
-                  onPressed: () => gamesServicesController.showLeaderboard(),
-                  child: const Text('Leaderboard'),
-                ),
-              ),
+              const Text('Music by Mr Smith'),
               _gap,
             ],
-            ElevatedButton(
-              onPressed: () => GoRouter.of(context).go('/settings'),
-              child: const Text('Settings'),
-            ),
-            _gap,
-            Padding(
-              padding: const EdgeInsets.only(top: 32),
-              child: Consumer(
-                builder: (context, ref, child) {
-                  ref.watch(settingsControllerProvider);
-                  return IconButton(
-                    onPressed: () => ref.read(settingsControllerProvider.notifier).toggleMuted(),
-                    icon: Icon(ref.watch(settingsControllerProvider).muted ? Icons.volume_off : Icons.volume_up),
-                  );
-                },
-              ),
-            ),
-            _gap,
-            const Text('Music by Mr Smith'),
-            _gap,
-          ],
+          ),
         ),
-      ),
-    );
+      );
+    });
   }
 
   /// Prevents the game from showing game-services-related menu items

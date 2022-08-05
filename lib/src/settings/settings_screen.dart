@@ -1,21 +1,22 @@
+import 'package:creator/creator.dart';
 import 'package:flutter/material.dart';
 import 'package:game_template/main.dart';
+import 'package:game_template/src/settings/settings_controller.dart';
 import 'package:game_template/src/style/palette.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../style/responsive_screen.dart';
 import 'custom_name_dialog.dart';
 
-class SettingsScreen extends ConsumerWidget {
+class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   static const _gap = SizedBox(height: 60);
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: ref.watch(paletteProvider).backgroundSettings,
+      backgroundColor: context.ref.watch(paletteCreator).backgroundSettings,
       body: ResponsiveScreen(
         squarishMainArea: ListView(
           children: [
@@ -33,22 +34,22 @@ class SettingsScreen extends ConsumerWidget {
             const _NameChangeLine(
               'Name',
             ),
-            Consumer(
-              builder: (context, ref, child) => _SettingsLine(
+            Watcher(
+              (context, ref, _) => _SettingsLine(
                 'Sound FX',
-                Icon(ref.watch(settingsControllerProvider).soundsOn ? Icons.graphic_eq : Icons.volume_off),
-                onSelected: () => ref.watch(settingsControllerProvider.notifier).toggleSoundsOn(),
+                Icon(ref.watch(SettingsController.soundsOn) ? Icons.graphic_eq : Icons.volume_off),
+                onSelected: () => SettingsController.toggleSoundsOn(ref),
               ),
             ),
-            Consumer(
-              builder: (context, ref, child) => _SettingsLine(
+            Watcher(
+              (context, ref, _) => _SettingsLine(
                 'Music',
-                Icon(ref.watch(settingsControllerProvider).musicOn ? Icons.music_note : Icons.music_off),
-                onSelected: () => ref.watch(settingsControllerProvider.notifier).toggleMusicOn(),
+                Icon(ref.watch(SettingsController.musicOn) ? Icons.music_note : Icons.music_off),
+                onSelected: () => SettingsController.toggleMusicOn(ref),
               ),
             ),
-            Consumer(builder: (context, ref, child) {
-              if (inAppPurchaseControllerProvider == null) {
+            Watcher((context, ref, _) {
+              if (inAppPurchaseControllerCreator == null) {
                 // In-app purchases are not supported yet.
                 // Go to lib/main.dart and uncomment the lines that create
                 // the InAppPurchaseController.
@@ -59,15 +60,15 @@ class SettingsScreen extends ConsumerWidget {
               VoidCallback? callback;
 
               //TODO: refactor to .when if ads enabled
-              if (inAppPurchaseControllerProvider != null
-                  ? ref.watch(inAppPurchaseControllerProvider!).maybeMap(
+              if (inAppPurchaseControllerCreator != null
+                  ? ref.watch(inAppPurchaseControllerCreator!).adRemoval.maybeMap(
                         active: (value) => true,
                         orElse: () => false,
                       )
                   : false) {
                 icon = const Icon(Icons.check);
-              } else if (inAppPurchaseControllerProvider != null
-                  ? ref.watch(inAppPurchaseControllerProvider!).maybeMap(
+              } else if (inAppPurchaseControllerCreator != null
+                  ? ref.watch(inAppPurchaseControllerCreator!).adRemoval.maybeMap(
                         pending: (value) => true,
                         orElse: () => false,
                       )
@@ -76,8 +77,8 @@ class SettingsScreen extends ConsumerWidget {
               } else {
                 icon = const Icon(Icons.ad_units);
                 callback = () {
-                  if (inAppPurchaseControllerProvider != null) {
-                    ref.read(inAppPurchaseControllerProvider!.notifier).buy();
+                  if (inAppPurchaseControllerCreator != null) {
+                    ref.read(inAppPurchaseControllerCreator!).buy();
                   }
                 };
               }
@@ -87,18 +88,20 @@ class SettingsScreen extends ConsumerWidget {
                 onSelected: callback,
               );
             }),
-            _SettingsLine(
-              'Reset progress',
-              const Icon(Icons.delete),
-              onSelected: () {
-                ref.read(playerProgressProvider.notifier).reset();
+            Watcher((context, ref, _) {
+              return _SettingsLine(
+                'Reset progress',
+                const Icon(Icons.delete),
+                onSelected: () {
+                  ref.read(playerProgressCreator).reset();
 
-                final messenger = ScaffoldMessenger.of(context);
-                messenger.showSnackBar(
-                  const SnackBar(content: Text('Player progress has been reset.')),
-                );
-              },
-            ),
+                  final messenger = ScaffoldMessenger.of(context);
+                  messenger.showSnackBar(
+                    const SnackBar(content: Text('Player progress has been reset.')),
+                  );
+                },
+              );
+            }),
             _gap,
           ],
         ),
@@ -113,13 +116,13 @@ class SettingsScreen extends ConsumerWidget {
   }
 }
 
-class _NameChangeLine extends ConsumerWidget {
+class _NameChangeLine extends StatelessWidget {
   final String title;
 
   const _NameChangeLine(this.title);
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return InkResponse(
       highlightShape: BoxShape.rectangle,
       onTap: () => showCustomNameDialog(context),
@@ -134,9 +137,9 @@ class _NameChangeLine extends ConsumerWidget {
                   fontSize: 30,
                 )),
             const Spacer(),
-            Consumer(
-              builder: (context, ref, child) => Text(
-                '‘${ref.watch(settingsControllerProvider).playerName}’',
+            Watcher(
+              (context, ref, _) => Text(
+                '‘${ref.watch(SettingsController.playerName)}’',
                 style: const TextStyle(
                   fontFamily: 'Permanent Marker',
                   fontSize: 30,

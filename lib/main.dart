@@ -5,19 +5,16 @@
 
 import 'dart:io';
 
+import 'package:creator/creator.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:game_template/src/audio/audio_controller.dart';
-import 'package:game_template/src/in_app_purchase/ad_removal_state.gen.dart';
 import 'package:game_template/src/player_progress/player_progress.dart';
-import 'package:game_template/src/settings/settings.dart';
-import 'package:game_template/src/settings/settings_state.gen.dart';
+import 'package:game_template/src/settings/settings_controller.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:logging/logging.dart';
 
@@ -31,7 +28,6 @@ import 'src/level_selection/levels.dart';
 import 'src/main_menu/main_menu_screen.dart';
 import 'src/play_session/play_session_screen.dart';
 import 'src/player_progress/persistence/local_storage_player_progress_persistence.dart';
-import 'src/settings/persistence/local_storage_settings_persistence.dart';
 import 'src/settings/settings_screen.dart';
 import 'src/style/my_transition.dart';
 import 'src/style/palette.dart';
@@ -82,8 +78,8 @@ void guardedMain() {
   );
 
   runApp(
-    const ProviderScope(
-      child: MyApp(),
+    CreatorGraph(
+      child: const MyApp(),
     ),
   );
 }
@@ -92,36 +88,36 @@ Logger _log = Logger('main.dart');
 
 // Prepare the google_mobile_ads plugin so that the first ad loads faster. This can be done later or with a delay if
 // startup experience suffers.
-final adsControllerProvider = (!kIsWeb && (Platform.isIOS || Platform.isAndroid))
-    ? Provider<AdsController>((ref) => AdsController(MobileAds.instance)..initialize())
+final adsControllerCreator = (!kIsWeb && (Platform.isIOS || Platform.isAndroid))
+    ? Creator((ref) => AdsController(MobileAds.instance)..initialize())
     : null;
 
 // Attempt to log the player in.
-final gamesServicesControllerProvider = (!kIsWeb && (Platform.isIOS || Platform.isAndroid))
-    ? Provider<GamesServicesController>((ref) => GamesServicesController()..initialize())
+final gamesServicesControllerCreator = (!kIsWeb && (Platform.isIOS || Platform.isAndroid))
+    ? Creator((ref) => GamesServicesController()..initialize())
     : null;
 
 // Subscribing to [InAppPurchase.instance.purchaseStream] as soon as possible in order not to miss any updates and
 // ask the store what the player has bought already.
-final inAppPurchaseControllerProvider = (!kIsWeb && (Platform.isIOS || Platform.isAndroid))
-    ? StateNotifierProvider<InAppPurchaseController, AdRemovalPurchaseState>(
+final inAppPurchaseControllerCreator = (!kIsWeb && (Platform.isIOS || Platform.isAndroid))
+    ? Creator(
         (ref) => InAppPurchaseController(InAppPurchase.instance)
           ..subscribe()
           ..restorePurchases(),
       )
     : null;
 
-final settingsControllerProvider = StateNotifierProvider<SettingsController, SettingsState>(
-  (ref) => SettingsController(persistence: LocalStorageSettingsPersistence())..loadStateFromPersistence(),
-);
+/* final settingsControllerCreator = Creator(
+  (ref) => SettingsController(persistence: LocalStorageSettingsPersistence()),
+); */
 
-final audioControllerProvider = Provider<AudioController>((ref) => AudioController(ref)..initialize());
+//final audioControllerCreator = Creator((ref) => AudioController(ref)..initialize());
 
-final playerProgressProvider = StateNotifierProvider<PlayerProgress, int>(
+final playerProgressCreator = Creator(
   (ref) => PlayerProgress(LocalStoragePlayerProgressPersistence())..getLatestFromStore(),
 );
 
-final routerProvider = Provider<GoRouter>((ref) {
+final routerCreator = Creator((ref) {
   return GoRouter(
     debugLogDiagnostics: true,
 
@@ -131,7 +127,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: 'play',
             pageBuilder: (context, state) => buildMyTransition(
                   child: const LevelSelectionScreen(key: Key('level selection')),
-                  color: ref.read(paletteProvider).backgroundLevelSelection,
+                  color: ref.watch(paletteCreator).backgroundLevelSelection,
                 ),
             routes: [
               GoRoute(
@@ -144,7 +140,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                       level,
                       key: const Key('play session'),
                     ),
-                    color: ref.read(paletteProvider).backgroundPlaySession,
+                    color: ref.read(paletteCreator).backgroundPlaySession,
                   );
                 },
               ),
@@ -159,7 +155,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                       score: score,
                       key: const Key('win game'),
                     ),
-                    color: ref.read(paletteProvider).backgroundPlaySession,
+                    color: ref.read(paletteCreator).backgroundPlaySession,
                   );
                 },
               )
@@ -173,39 +169,59 @@ final routerProvider = Provider<GoRouter>((ref) {
   );
 });
 
-class MyApp extends ConsumerStatefulWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
   @override
-  ConsumerState<ConsumerStatefulWidget> createState() => _MyAppState();
+  State<StatefulWidget> createState() => _MyAppState();
 }
 
-class _MyAppState extends ConsumerState<MyApp> {
+class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    ref.read(audioControllerProvider);
+    //CreatorGraphData.of(context).ref.read(SettingsController.musicOn);
+    //SettingsController.loadStateFromPersistence(CreatorGraphData.of(context).ref);
+    //AudioController.initialize(CreatorGraphData.of(context).ref);
+    //CreatorGraphData.of(context).ref.read(audioControllerCreator);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    SettingsController.loadStateFromPersistence(context.ref);
+    AudioController.initialize(context.ref);
   }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'Flutter Demo',
-      theme: ThemeData.from(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: ref.read(paletteProvider).darkPen,
-          background: ref.read(paletteProvider).backgroundMain,
-        ),
-        textTheme: TextTheme(
-          bodyText2: TextStyle(
-            color: ref.read(paletteProvider).ink,
+    return Watcher(
+      null,
+      listener: (ref) {
+        print("LISTENER");
+        ref.watch(SettingsController.muted);
+        ref.watch(SettingsController.musicOn);
+        AudioController.mutedHandler(ref);
+        AudioController.musicOnHandler(ref);
+      },
+      child: MaterialApp.router(
+        title: 'Flutter Demo',
+        theme: ThemeData.from(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: context.ref.watch(paletteCreator).darkPen,
+            background: context.ref.watch(paletteCreator).backgroundMain,
+          ),
+          textTheme: TextTheme(
+            bodyText2: TextStyle(
+              color: context.ref.watch(paletteCreator).ink,
+            ),
           ),
         ),
+        routeInformationParser: context.ref.watch(routerCreator).routeInformationParser,
+        routeInformationProvider: context.ref.watch(routerCreator).routeInformationProvider,
+        routerDelegate: context.ref.watch(routerCreator).routerDelegate,
+        scaffoldMessengerKey: scaffoldMessengerKey,
       ),
-      routeInformationParser: ref.read(routerProvider).routeInformationParser,
-      routeInformationProvider: ref.read(routerProvider).routeInformationProvider,
-      routerDelegate: ref.read(routerProvider).routerDelegate,
-      scaffoldMessengerKey: scaffoldMessengerKey,
     );
   }
 }

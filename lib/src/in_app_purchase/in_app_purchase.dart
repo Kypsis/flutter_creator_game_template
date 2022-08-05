@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:flutter/material.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:logging/logging.dart';
 
@@ -8,7 +8,7 @@ import '../style/snack_bar.dart';
 import 'ad_removal_state.gen.dart';
 
 /// Allows buying in-app. Facade of `package:in_app_purchase`.
-class InAppPurchaseController extends StateNotifier<AdRemovalPurchaseState> {
+class InAppPurchaseController extends ChangeNotifier {
   static final Logger _log = Logger('InAppPurchases');
 
   StreamSubscription<List<PurchaseDetails>>? _subscription;
@@ -23,7 +23,7 @@ class InAppPurchaseController extends StateNotifier<AdRemovalPurchaseState> {
   /// Example usage:
   ///
   ///     var controller = InAppPurchaseController(InAppPurchase.instance);
-  InAppPurchaseController(this.inAppPurchaseInstance) : super(AdRemovalPurchaseState.notStarted());
+  InAppPurchaseController(this.inAppPurchaseInstance);
 
   /// The current state of the ad removal purchase.
   AdRemovalPurchaseState get adRemoval => _adRemoval;
@@ -40,7 +40,6 @@ class InAppPurchaseController extends StateNotifier<AdRemovalPurchaseState> {
     }
 
     _adRemoval = AdRemovalPurchaseState.pending();
-    state = _adRemoval;
 
     _log.info('Querying the store with queryProductDetails()');
     final response = await inAppPurchaseInstance.queryProductDetails({AdRemovalPurchaseState.productId});
@@ -122,14 +121,14 @@ class InAppPurchaseController extends StateNotifier<AdRemovalPurchaseState> {
         _log.severe("The handling of the product with id "
             "'${purchaseDetails.productID}' is not implemented.");
         _adRemoval = AdRemovalPurchaseState.notStarted();
-        state = _adRemoval;
+
         continue;
       }
 
       switch (purchaseDetails.status) {
         case PurchaseStatus.pending:
           _adRemoval = AdRemovalPurchaseState.pending();
-          state = _adRemoval;
+
           break;
         case PurchaseStatus.purchased:
         case PurchaseStatus.restored:
@@ -139,21 +138,19 @@ class InAppPurchaseController extends StateNotifier<AdRemovalPurchaseState> {
             if (purchaseDetails.status == PurchaseStatus.purchased) {
               showSnackBar('Thank you for your support!');
             }
-            state = _adRemoval;
           } else {
             _log.severe('Purchase verification failed: $purchaseDetails');
             _adRemoval = AdRemovalPurchaseState.error(StateError('Purchase could not be verified'));
-            state = _adRemoval;
           }
           break;
         case PurchaseStatus.error:
           _log.severe('Error with purchase: ${purchaseDetails.error}');
           _adRemoval = AdRemovalPurchaseState.error(purchaseDetails.error!);
-          state = _adRemoval;
+
           break;
         case PurchaseStatus.canceled:
           _adRemoval = AdRemovalPurchaseState.notStarted();
-          state = _adRemoval;
+
           break;
       }
 
@@ -168,7 +165,6 @@ class InAppPurchaseController extends StateNotifier<AdRemovalPurchaseState> {
     _log.severe(message);
     showSnackBar(message);
     _adRemoval = AdRemovalPurchaseState.error(message);
-    state = _adRemoval;
   }
 
   Future<bool> _verifyPurchase(PurchaseDetails purchaseDetails) async {

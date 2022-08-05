@@ -1,11 +1,9 @@
 import 'dart:async';
 
-import 'package:hooks_riverpod/hooks_riverpod.dart';
-
 import 'persistence/player_progress_persistence.dart';
 
 /// Encapsulates the player's progress.
-class PlayerProgress extends StateNotifier<int> {
+class PlayerProgress {
   static const maxHighestScoresPerPlayer = 10;
 
   final PlayerProgressPersistence _store;
@@ -16,8 +14,7 @@ class PlayerProgress extends StateNotifier<int> {
   /// persistence [store].
   PlayerProgress(
     PlayerProgressPersistence store,
-  )   : _store = store,
-        super(0);
+  ) : _store = store;
 
   /// The highest level that the player has reached so far.
   int get highestLevelReached => _highestLevelReached;
@@ -27,7 +24,6 @@ class PlayerProgress extends StateNotifier<int> {
     final level = await _store.getHighestLevelReached();
     if (level > _highestLevelReached) {
       _highestLevelReached = level;
-      state = _highestLevelReached;
     } else if (level < _highestLevelReached) {
       await _store.saveHighestLevelReached(_highestLevelReached);
     }
@@ -37,7 +33,6 @@ class PlayerProgress extends StateNotifier<int> {
   /// playing the game for the first time.
   void reset() {
     _highestLevelReached = 0;
-    state = _highestLevelReached;
     _store.saveHighestLevelReached(_highestLevelReached);
   }
 
@@ -48,7 +43,6 @@ class PlayerProgress extends StateNotifier<int> {
   void setLevelReached(int level) {
     if (level > _highestLevelReached) {
       _highestLevelReached = level;
-      state = _highestLevelReached;
 
       unawaited(_store.saveHighestLevelReached(level));
     }

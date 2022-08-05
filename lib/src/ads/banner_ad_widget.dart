@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:creator/creator.dart';
 import 'package:flutter/material.dart';
 import 'package:game_template/main.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:logging/logging.dart';
 
 import 'preloaded_banner_ad.dart';
@@ -26,14 +26,14 @@ import 'preloaded_banner_ad.dart';
 /// This widget is adapted from pkg:google_mobile_ads's example code,
 /// namely the `anchored_adaptive_example.dart` file:
 /// https://github.com/googleads/googleads-mobile-flutter/blob/main/packages/google_mobile_ads/example/lib/anchored_adaptive_example.dart
-class BannerAdWidget extends ConsumerStatefulWidget {
+class BannerAdWidget extends StatefulWidget {
   const BannerAdWidget({super.key});
 
   @override
   BannerAdWidgetState createState() => BannerAdWidgetState();
 }
 
-class BannerAdWidgetState extends ConsumerState<BannerAdWidget> {
+class BannerAdWidgetState extends State<BannerAdWidget> {
   static final _log = Logger('BannerAdWidget');
 
   static const useAnchoredAdaptiveSize = false;
@@ -83,7 +83,9 @@ class BannerAdWidgetState extends ConsumerState<BannerAdWidget> {
   void initState() {
     super.initState();
 
-    final ad = adsControllerProvider != null ? ref.read(adsControllerProvider!).takePreloadedAd() : null;
+    final ad = adsControllerCreator != null
+        ? CreatorGraphData.of(context).ref.read(adsControllerCreator!).takePreloadedAd()
+        : null;
     if (ad != null) {
       _log.info("A preloaded banner was supplied. Using it.");
       _showPreloadedAd(ad);
