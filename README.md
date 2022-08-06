@@ -1,4 +1,4 @@
-### Google's Flutter game_template modified to use Creator and flutter_hooks.
+### Google's Flutter game_template modified to use Creator, flutter_hooks and freezed.
 
 A starter game in Flutter with all the bells and whistles
 of a mobile (iOS & Android) game including the following features:
@@ -66,7 +66,7 @@ lib
 └── main.dart
 ```
 
-State management uses Riverpod (hooks_riverpod).
+State management uses Creator.
 
 
 ## Building for production
