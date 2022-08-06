@@ -44,6 +44,13 @@ class AudioController {
     }
   }
 
+  static void dispose() {
+    _stopAllSound();
+    FlameAudio.bgm.dispose();
+    FlameAudio.audioCache.clearAll();
+    _audioCache.clear();
+  }
+
   /// Plays a single sound effect, defined by [type].
   ///
   /// The controller will ignore this call when the attached settings'

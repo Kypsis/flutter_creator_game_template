@@ -107,12 +107,6 @@ final inAppPurchaseControllerCreator = (!kIsWeb && (Platform.isIOS || Platform.i
       )
     : null;
 
-/* final settingsControllerCreator = Creator(
-  (ref) => SettingsController(persistence: LocalStorageSettingsPersistence()),
-); */
-
-//final audioControllerCreator = Creator((ref) => AudioController(ref)..initialize());
-
 final playerProgressCreator = Creator(
   (ref) => PlayerProgress(LocalStoragePlayerProgressPersistence())..getLatestFromStore(),
 );
@@ -178,15 +172,6 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   @override
-  void initState() {
-    super.initState();
-    //CreatorGraphData.of(context).ref.read(SettingsController.musicOn);
-    //SettingsController.loadStateFromPersistence(CreatorGraphData.of(context).ref);
-    //AudioController.initialize(CreatorGraphData.of(context).ref);
-    //CreatorGraphData.of(context).ref.read(audioControllerCreator);
-  }
-
-  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     SettingsController.loadStateFromPersistence(context.ref);
@@ -194,14 +179,20 @@ class _MyAppState extends State<MyApp> {
   }
 
   @override
+  void dispose() {
+    AudioController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Watcher(
       null,
       listener: (ref) {
-        print("LISTENER");
         ref.watch(SettingsController.muted);
-        ref.watch(SettingsController.musicOn);
         AudioController.mutedHandler(ref);
+
+        ref.watch(SettingsController.musicOn);
         AudioController.musicOnHandler(ref);
       },
       child: MaterialApp.router(
