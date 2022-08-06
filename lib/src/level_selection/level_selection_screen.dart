@@ -1,7 +1,7 @@
 import 'package:creator/creator.dart';
 import 'package:flutter/material.dart';
-import 'package:game_template/main.dart';
 import 'package:game_template/src/audio/audio_controller.dart';
+import 'package:game_template/src/player_progress/player_progress_controller.dart';
 import 'package:game_template/src/style/palette.dart';
 import 'package:go_router/go_router.dart';
 
@@ -36,7 +36,7 @@ class LevelSelectionScreen extends StatelessWidget {
                     for (final level in gameLevels)
                       Watcher((context, ref, _) {
                         return ListTile(
-                          enabled: ref.watch(playerProgressCreator).highestLevelReached >= level.number - 1,
+                          enabled: ref.watch(PlayerProgressController.highestLevelReached) >= level.number - 1,
                           onTap: () {
                             AudioController.playSfx(ref, type: SfxType.buttonTap);
 

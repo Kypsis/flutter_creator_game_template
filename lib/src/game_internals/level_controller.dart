@@ -16,8 +16,6 @@ class LevelController {
   }
 
   static void evaluate(Ref ref, {required VoidCallback onWin, int goal = 100}) {
-    if (ref.read(progress) >= goal) {
-      onWin();
-    }
+    if (ref.read(progress) >= goal) onWin();
   }
 }

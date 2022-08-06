@@ -1,6 +1,7 @@
 import 'package:creator/creator.dart';
 import 'package:flutter/material.dart';
 import 'package:game_template/main.dart';
+import 'package:game_template/src/player_progress/player_progress_controller.dart';
 import 'package:game_template/src/settings/settings_controller.dart';
 import 'package:game_template/src/style/palette.dart';
 import 'package:go_router/go_router.dart';
@@ -93,7 +94,7 @@ class SettingsScreen extends StatelessWidget {
                 'Reset progress',
                 const Icon(Icons.delete),
                 onSelected: () {
-                  ref.read(playerProgressCreator).reset();
+                  PlayerProgressController.reset(ref);
 
                   final messenger = ScaffoldMessenger.of(context);
                   messenger.showSnackBar(

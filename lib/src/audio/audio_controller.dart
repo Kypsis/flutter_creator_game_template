@@ -1,6 +1,7 @@
 import 'dart:collection';
 import 'dart:math';
 
+// ignore: depend_on_referenced_packages
 import 'package:audioplayers/audioplayers.dart' hide Logger;
 import 'package:creator/creator.dart';
 import 'package:flame_audio/audio_pool.dart';
@@ -39,10 +40,6 @@ class AudioController {
 
     FlameAudio.bgm.initialize();
     FlameAudio.bgm.audioPlayer?.onPlayerCompletion.listen(_changeSong);
-
-    /* if (!ref.watch(SettingsController.muted) && ref.watch(SettingsController.musicOn)) {
-      await FlameAudio.bgm.play("music/${_playlist.first.filename}");
-    } */
   }
 
   static void dispose() {
@@ -87,7 +84,6 @@ class AudioController {
   }
 
   static void musicHandler(Ref ref) {
-    print("musicOnHandler!!!!!");
     if (ref.read(SettingsController.musicOn) && !ref.read(SettingsController.muted)) {
       // Music got turned on.
       _resumeMusic();

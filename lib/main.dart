@@ -11,7 +11,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:game_template/src/audio/audio_controller.dart';
-import 'package:game_template/src/player_progress/player_progress.dart';
+import 'package:game_template/src/player_progress/player_progress_controller.dart';
 import 'package:game_template/src/settings/settings_controller.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -27,7 +27,6 @@ import 'src/level_selection/level_selection_screen.dart';
 import 'src/level_selection/levels.dart';
 import 'src/main_menu/main_menu_screen.dart';
 import 'src/play_session/play_session_screen.dart';
-import 'src/player_progress/persistence/local_storage_player_progress_persistence.dart';
 import 'src/settings/settings_screen.dart';
 import 'src/style/my_transition.dart';
 import 'src/style/palette.dart';
@@ -107,10 +106,6 @@ final inAppPurchaseControllerCreator = (!kIsWeb && (Platform.isIOS || Platform.i
       )
     : null;
 
-final playerProgressCreator = Creator(
-  (ref) => PlayerProgress(LocalStoragePlayerProgressPersistence())..getLatestFromStore(),
-);
-
 final routerCreator = Creator((ref) {
   return GoRouter(
     debugLogDiagnostics: true,
@@ -175,6 +170,7 @@ class _MyAppState extends State<MyApp> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     SettingsController.loadStateFromPersistence(context.ref);
+    PlayerProgressController.getLatestFromStore(context.ref);
     AudioController.initialize(context.ref);
   }
 
