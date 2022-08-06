@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:creator/creator.dart';
 import 'package:flutter/material.dart';
-import 'package:game_template/main.dart';
+import 'package:game_template/src/ads/ads_controller.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:logging/logging.dart';
 
@@ -69,7 +69,16 @@ class BannerAdWidgetState extends State<BannerAdWidget> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+
     _currentOrientation = MediaQuery.of(context).orientation;
+
+    final ad = context.ref.watch(AdsController.preloadedAd) != null ? AdsController.takePreloadedAd(context.ref) : null;
+    if (ad != null) {
+      _log.info("A preloaded banner was supplied. Using it.");
+      _showPreloadedAd(ad);
+    } else {
+      _loadAd();
+    }
   }
 
   @override
@@ -77,21 +86,6 @@ class BannerAdWidgetState extends State<BannerAdWidget> {
     _log.info('disposing ad');
     _bannerAd?.dispose();
     super.dispose();
-  }
-
-  @override
-  void initState() {
-    super.initState();
-
-    final ad = adsControllerCreator != null
-        ? CreatorGraphData.of(context).ref.read(adsControllerCreator!).takePreloadedAd()
-        : null;
-    if (ad != null) {
-      _log.info("A preloaded banner was supplied. Using it.");
-      _showPreloadedAd(ad);
-    } else {
-      _loadAd();
-    }
   }
 
   /// Load (another) ad, disposing of the current ad if there is one.

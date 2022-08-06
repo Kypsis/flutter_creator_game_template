@@ -1,9 +1,7 @@
 import 'package:creator/creator.dart';
 import 'package:flutter/foundation.dart';
-import 'package:game_template/src/settings/persistence/local_storage_settings_persistence.dart';
+import 'package:game_template/src/settings/local_storage_settings_persistence.dart';
 
-/// An class that holds settings like [playerName] or [musicOn],
-/// and saves them to persistence store.
 class SettingsController {
   SettingsController._();
 
@@ -12,7 +10,6 @@ class SettingsController {
   static final musicOn = Creator.value(true, keepAlive: true);
   static final soundsOn = Creator.value(true, keepAlive: true);
 
-  /// Asynchronously loads values from the injected persistence store.
   static Future<void> loadStateFromPersistence(Ref ref) async {
     await Future.wait([
       LocalStorageSettingsPersistence.getPlayerName().then((value) => ref.set(playerName, value)),

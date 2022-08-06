@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:creator/creator.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:logging/logging.dart';
 
@@ -8,45 +8,33 @@ import '../style/snack_bar.dart';
 import 'ad_removal_state.gen.dart';
 
 /// Allows buying in-app. Facade of `package:in_app_purchase`.
-class InAppPurchaseController extends ChangeNotifier {
+class InAppPurchaseController {
   static final Logger _log = Logger('InAppPurchases');
 
-  StreamSubscription<List<PurchaseDetails>>? _subscription;
+  static StreamSubscription<List<PurchaseDetails>>? subscription;
 
-  InAppPurchase inAppPurchaseInstance;
-
-  AdRemovalPurchaseState _adRemoval = AdRemovalPurchaseState.notStarted();
-
-  /// Creates a new [InAppPurchaseController] with an injected
-  /// [InAppPurchase] instance.
-  ///
-  /// Example usage:
-  ///
-  ///     var controller = InAppPurchaseController(InAppPurchase.instance);
-  InAppPurchaseController(this.inAppPurchaseInstance);
-
-  /// The current state of the ad removal purchase.
-  AdRemovalPurchaseState get adRemoval => _adRemoval;
+  static final adRemoval = Creator.value(AdRemovalPurchaseState.notStarted());
 
   /// Launches the platform UI for buying an in-app purchase.
   ///
   /// Currently, the only supported in-app purchase is ad removal.
   /// To support more, ad additional classes similar to [AdRemovalPurchase]
   /// and modify this method.
-  Future<void> buy() async {
-    if (!await inAppPurchaseInstance.isAvailable()) {
-      _reportError('InAppPurchase.instance not available');
+  static Future<void> buy(Ref ref) async {
+    if (!await InAppPurchase.instance.isAvailable()) {
+      _reportError(ref, message: 'InAppPurchase.instance not available');
       return;
     }
 
-    _adRemoval = AdRemovalPurchaseState.pending();
+    ref.set(adRemoval, AdRemovalPurchaseState.pending());
 
     _log.info('Querying the store with queryProductDetails()');
-    final response = await inAppPurchaseInstance.queryProductDetails({AdRemovalPurchaseState.productId});
+    final response = await InAppPurchase.instance.queryProductDetails({AdRemovalPurchaseState.productId});
 
     if (response.error != null) {
-      _reportError('There was an error when making the purchase: '
-          '${response.error}');
+      _reportError(ref,
+          message: 'There was an error when making the purchase: '
+              '${response.error}');
       return;
     }
 
@@ -55,8 +43,9 @@ class InAppPurchaseController extends ChangeNotifier {
         'Products in response: '
         '${response.productDetails.map((e) => '${e.id}: ${e.title}, ').join()}',
       );
-      _reportError('There was an error when making the purchase: '
-          'product ${AdRemovalPurchaseState.productId} does not exist?');
+      _reportError(ref,
+          message: 'There was an error when making the purchase: '
+              'product ${AdRemovalPurchaseState.productId} does not exist?');
       return;
     }
     final productDetails = response.productDetails.single;
@@ -64,7 +53,7 @@ class InAppPurchaseController extends ChangeNotifier {
     _log.info('Making the purchase');
     final purchaseParam = PurchaseParam(productDetails: productDetails);
     try {
-      final success = await inAppPurchaseInstance.buyNonConsumable(purchaseParam: purchaseParam);
+      final success = await InAppPurchase.instance.buyNonConsumable(purchaseParam: purchaseParam);
       _log.info('buyNonConsumable() request was sent with success: $success');
       // The result of the purchase will be reported in the purchaseStream,
       // which is handled in [_listenToPurchaseUpdated].
@@ -74,22 +63,20 @@ class InAppPurchaseController extends ChangeNotifier {
     }
   }
 
-  @override
-  void dispose() {
-    _subscription?.cancel();
-    super.dispose();
+  static void dispose() {
+    subscription?.cancel();
   }
 
   /// Asks the underlying platform to list purchases that have been already
   /// made (for example, in a previous session of the game).
-  Future<void> restorePurchases() async {
-    if (!await inAppPurchaseInstance.isAvailable()) {
-      _reportError('InAppPurchase.instance not available');
+  static Future<void> restorePurchases(Ref ref) async {
+    if (!await InAppPurchase.instance.isAvailable()) {
+      _reportError(ref, message: 'InAppPurchase.instance not available');
       return;
     }
 
     try {
-      await inAppPurchaseInstance.restorePurchases();
+      await InAppPurchase.instance.restorePurchases();
     } catch (e) {
       _log.severe('Could not restore in-app purchases: $e');
     }
@@ -97,18 +84,18 @@ class InAppPurchaseController extends ChangeNotifier {
   }
 
   /// Subscribes to the [inAppPurchaseInstance.purchaseStream].
-  void subscribe() {
-    _subscription?.cancel();
-    _subscription = inAppPurchaseInstance.purchaseStream.listen((purchaseDetailsList) {
-      _listenToPurchaseUpdated(purchaseDetailsList);
+  static void subscribe(Ref ref) {
+    subscription?.cancel();
+    subscription = InAppPurchase.instance.purchaseStream.listen((purchaseDetailsList) {
+      _listenToPurchaseUpdated(ref, purchaseDetailsList: purchaseDetailsList);
     }, onDone: () {
-      _subscription?.cancel();
+      subscription?.cancel();
     }, onError: (dynamic error) {
       _log.severe('Error occurred on the purchaseStream: $error');
     });
   }
 
-  Future<void> _listenToPurchaseUpdated(List<PurchaseDetails> purchaseDetailsList) async {
+  static Future<void> _listenToPurchaseUpdated(Ref ref, {required List<PurchaseDetails> purchaseDetailsList}) async {
     for (final purchaseDetails in purchaseDetailsList) {
       _log.info(() => 'New PurchaseDetails instance received: '
           'productID=${purchaseDetails.productID}, '
@@ -120,54 +107,54 @@ class InAppPurchaseController extends ChangeNotifier {
       if (purchaseDetails.productID != AdRemovalPurchaseState.productId) {
         _log.severe("The handling of the product with id "
             "'${purchaseDetails.productID}' is not implemented.");
-        _adRemoval = AdRemovalPurchaseState.notStarted();
+        ref.set(adRemoval, AdRemovalPurchaseState.notStarted());
 
         continue;
       }
 
       switch (purchaseDetails.status) {
         case PurchaseStatus.pending:
-          _adRemoval = AdRemovalPurchaseState.pending();
+          ref.set(adRemoval, AdRemovalPurchaseState.pending());
 
           break;
         case PurchaseStatus.purchased:
         case PurchaseStatus.restored:
           bool valid = await _verifyPurchase(purchaseDetails);
           if (valid) {
-            _adRemoval = AdRemovalPurchaseState.active();
+            ref.set(adRemoval, AdRemovalPurchaseState.active());
             if (purchaseDetails.status == PurchaseStatus.purchased) {
               showSnackBar('Thank you for your support!');
             }
           } else {
             _log.severe('Purchase verification failed: $purchaseDetails');
-            _adRemoval = AdRemovalPurchaseState.error(StateError('Purchase could not be verified'));
+            ref.set(adRemoval, AdRemovalPurchaseState.error(StateError('Purchase could not be verified')));
           }
           break;
         case PurchaseStatus.error:
           _log.severe('Error with purchase: ${purchaseDetails.error}');
-          _adRemoval = AdRemovalPurchaseState.error(purchaseDetails.error!);
+          ref.set(adRemoval, AdRemovalPurchaseState.error(purchaseDetails.error!));
 
           break;
         case PurchaseStatus.canceled:
-          _adRemoval = AdRemovalPurchaseState.notStarted();
+          ref.set(adRemoval, AdRemovalPurchaseState.notStarted());
 
           break;
       }
 
       if (purchaseDetails.pendingCompletePurchase) {
         // Confirm purchase back to the store.
-        await inAppPurchaseInstance.completePurchase(purchaseDetails);
+        await InAppPurchase.instance.completePurchase(purchaseDetails);
       }
     }
   }
 
-  void _reportError(String message) {
+  static void _reportError(Ref ref, {required String message}) {
     _log.severe(message);
     showSnackBar(message);
-    _adRemoval = AdRemovalPurchaseState.error(message);
+    ref.set(adRemoval, AdRemovalPurchaseState.error(message));
   }
 
-  Future<bool> _verifyPurchase(PurchaseDetails purchaseDetails) async {
+  static Future<bool> _verifyPurchase(PurchaseDetails purchaseDetails) async {
     _log.info('Verifying purchase: ${purchaseDetails.verificationData}');
     // TODO: verify the purchase.
     // See the info in [purchaseDetails.verificationData] to learn more.

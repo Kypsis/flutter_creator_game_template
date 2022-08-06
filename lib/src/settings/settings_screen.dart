@@ -1,6 +1,6 @@
 import 'package:creator/creator.dart';
 import 'package:flutter/material.dart';
-import 'package:game_template/main.dart';
+import 'package:game_template/src/in_app_purchase/in_app_purchase_controller.dart';
 import 'package:game_template/src/player_progress/player_progress_controller.dart';
 import 'package:game_template/src/settings/settings_controller.dart';
 import 'package:game_template/src/style/palette.dart';
@@ -50,7 +50,7 @@ class SettingsScreen extends StatelessWidget {
               ),
             ),
             Watcher((context, ref, _) {
-              if (inAppPurchaseControllerCreator == null) {
+              if (InAppPurchaseController.subscription == null) {
                 // In-app purchases are not supported yet.
                 // Go to lib/main.dart and uncomment the lines that create
                 // the InAppPurchaseController.
@@ -61,15 +61,15 @@ class SettingsScreen extends StatelessWidget {
               VoidCallback? callback;
 
               //TODO: refactor to .when if ads enabled
-              if (inAppPurchaseControllerCreator != null
-                  ? ref.watch(inAppPurchaseControllerCreator!).adRemoval.maybeMap(
+              if (InAppPurchaseController.subscription != null
+                  ? ref.watch(InAppPurchaseController.adRemoval).maybeMap(
                         active: (value) => true,
                         orElse: () => false,
                       )
                   : false) {
                 icon = const Icon(Icons.check);
-              } else if (inAppPurchaseControllerCreator != null
-                  ? ref.watch(inAppPurchaseControllerCreator!).adRemoval.maybeMap(
+              } else if (InAppPurchaseController.subscription != null
+                  ? ref.watch(InAppPurchaseController.adRemoval).maybeMap(
                         pending: (value) => true,
                         orElse: () => false,
                       )
@@ -78,8 +78,8 @@ class SettingsScreen extends StatelessWidget {
               } else {
                 icon = const Icon(Icons.ad_units);
                 callback = () {
-                  if (inAppPurchaseControllerCreator != null) {
-                    ref.read(inAppPurchaseControllerCreator!).buy();
+                  if (InAppPurchaseController.subscription != null) {
+                    InAppPurchaseController.buy(ref);
                   }
                 };
               }

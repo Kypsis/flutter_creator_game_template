@@ -3,13 +3,14 @@ import 'dart:async';
 import 'package:creator/creator.dart';
 import 'package:flutter/material.dart';
 import 'package:game_template/main.dart';
+import 'package:game_template/src/ads/ads_controller.dart';
 import 'package:game_template/src/audio/audio_controller.dart';
+import 'package:game_template/src/in_app_purchase/in_app_purchase_controller.dart';
 import 'package:game_template/src/player_progress/player_progress_controller.dart';
 import 'package:game_template/src/style/palette.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logging/logging.dart' hide Level;
 
-import '../ads/ads_controller.dart';
 import '../audio/sounds.dart';
 import '../game_internals/level_controller.dart';
 import '../games_services/score.dart';
@@ -46,7 +47,6 @@ class PlaySessionScreenState extends State<PlaySessionScreen> {
           body: Stack(
             children: [
               Center(
-                // This is the entirety of the "game".
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -107,19 +107,23 @@ class PlaySessionScreenState extends State<PlaySessionScreen> {
   @override
   void initState() {
     super.initState();
-
     _startOfPlay = DateTime.now();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
 
     // Preload ad for the win screen.
-    /* final adsRemoved = inAppPurchaseControllerCreator != null
-        ? context.ref.read(inAppPurchaseControllerCreator!).adRemoval.maybeMap(
+    final adsRemoved = InAppPurchaseController.subscription != null
+        ? context.ref.read(InAppPurchaseController.adRemoval).maybeMap(
               active: (value) => true,
               orElse: () => false,
             )
         : false;
-    if (!adsRemoved && adsControllerCreator != null) {
-      context.ref.read<AdsController?>(adsControllerCreator!)!.preloadAd();
-    } */
+    if (!adsRemoved && InAppPurchaseController.subscription != null) {
+      AdsController.preloadAd(context.ref);
+    }
   }
 
   Future<void> _playerWon() async {
@@ -144,7 +148,6 @@ class PlaySessionScreenState extends State<PlaySessionScreen> {
     AudioController.playSfx(context.ref, type: SfxType.congrats);
 
     if (gamesServicesControllerCreator != null) {
-      // Award achievement.
       if (widget.level.awardsAchievement) {
         await context.ref.read(gamesServicesControllerCreator!).awardAchievement(
               android: widget.level.achievementIdAndroid!,
@@ -152,7 +155,6 @@ class PlaySessionScreenState extends State<PlaySessionScreen> {
             );
       }
 
-      // Send score to leaderboard.
       await context.ref.read(gamesServicesControllerCreator!).submitLeaderboardScore(score);
     }
 

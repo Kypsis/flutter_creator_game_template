@@ -1,6 +1,7 @@
 import 'package:creator/creator.dart';
 import 'package:flutter/material.dart';
-import 'package:game_template/main.dart';
+import 'package:game_template/src/ads/ads_controller.dart';
+import 'package:game_template/src/in_app_purchase/in_app_purchase_controller.dart';
 import 'package:game_template/src/style/palette.dart';
 import 'package:go_router/go_router.dart';
 
@@ -19,10 +20,10 @@ class WinGameScreen extends StatelessWidget {
   ) {
     const gap = SizedBox(height: 10);
 
-    final adsControllerAvailable = (adsControllerCreator) != null;
+    final adsControllerAvailable = context.ref.watch(AdsController.preloadedAd) != null;
 
-    final adsRemoved = inAppPurchaseControllerCreator != null
-        ? context.ref.watch(inAppPurchaseControllerCreator!).adRemoval.maybeMap(
+    final adsRemoved = InAppPurchaseController.subscription != null
+        ? context.ref.watch(InAppPurchaseController.adRemoval).maybeMap(
               active: (value) => true,
               orElse: () => false,
             )

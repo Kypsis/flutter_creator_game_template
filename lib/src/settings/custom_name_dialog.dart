@@ -47,7 +47,6 @@ class CustomNameDialog extends HookWidget {
                 SettingsController.setPlayerName(ref, name: value);
               },
               onSubmitted: (value) {
-                // Player tapped 'Submit'/'Done' on their keyboard.
                 Navigator.pop(context);
               },
             );
