@@ -14,7 +14,7 @@ import 'package:game_template/router.dart';
 import 'package:game_template/src/audio/audio_controller.dart';
 import 'package:game_template/src/player_progress/player_progress_controller.dart';
 import 'package:game_template/src/settings/settings_controller.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
+
 import 'package:logging/logging.dart';
 
 import 'src/ads/ads_controller.dart';
@@ -76,11 +76,6 @@ void guardedMain() {
 
 Logger _log = Logger('main.dart');
 
-// Attempt to log the player in.
-final gamesServicesControllerCreator = (!kIsWeb && (Platform.isIOS || Platform.isAndroid))
-    ? Creator((ref) => GamesServicesController()..initialize())
-    : null;
-
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
@@ -98,6 +93,7 @@ class _MyAppState extends State<MyApp> {
     AudioController.initialize(context.ref);
 
     if (!kIsWeb && (Platform.isIOS || Platform.isAndroid)) AdsController.initialize();
+    if (!kIsWeb && (Platform.isIOS || Platform.isAndroid)) GamesServicesController.initialize(context.ref);
     if (!kIsWeb && (Platform.isIOS || Platform.isAndroid)) InAppPurchaseController.subscribe(context.ref);
     if (!kIsWeb && (Platform.isIOS || Platform.isAndroid)) InAppPurchaseController.restorePurchases(context.ref);
   }

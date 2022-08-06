@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:creator/creator.dart';
 import 'package:games_services/games_services.dart' as gs;
 import 'package:logging/logging.dart';
 
@@ -11,11 +12,16 @@ import 'score.dart';
 ///
 /// A facade of `package:games_services`.
 class GamesServicesController {
+  const GamesServicesController._();
+
   static final Logger _log = Logger('GamesServicesController');
 
-  final Completer<bool> _signedInCompleter = Completer();
+  static final Completer<bool> signedInCompleter = Completer();
 
-  Future<bool> get signedIn => _signedInCompleter.future;
+  static final signedIn = Emitter<bool>((ref, emit) async {
+    final isSignedIn = await signedInCompleter.future;
+    emit(isSignedIn);
+  });
 
   /// Unlocks an achievement on Game Center / Play Games.
   ///
@@ -24,8 +30,8 @@ class GamesServicesController {
   ///
   /// Does nothing when the game isn't signed into the underlying
   /// games service.
-  Future<void> awardAchievement({required String iOS, required String android}) async {
-    if (!await signedIn) {
+  static Future<void> awardAchievement(Ref ref, {required String iOS, required String android}) async {
+    if (!await ref.watch(signedIn)) {
       _log.warning('Trying to award achievement when not logged in.');
       return;
     }
@@ -43,23 +49,23 @@ class GamesServicesController {
   }
 
   /// Signs into the underlying games service.
-  Future<void> initialize() async {
+  static Future<void> initialize(Ref ref) async {
     try {
       await gs.GamesServices.signIn();
       // The API is unclear so we're checking to be sure. The above call
       // returns a String, not a boolean, and there's no documentation
       // as to whether every non-error result means we're safely signed in.
       final signedIn = await gs.GamesServices.isSignedIn;
-      _signedInCompleter.complete(signedIn);
+      signedInCompleter.complete(signedIn);
     } catch (e) {
       _log.severe('Cannot log into GamesServices: $e');
-      _signedInCompleter.complete(false);
+      signedInCompleter.complete(false);
     }
   }
 
   /// Launches the platform's UI overlay with achievements.
-  Future<void> showAchievements() async {
-    if (!await signedIn) {
+  static Future<void> showAchievements(Ref ref) async {
+    if (!await ref.watch(signedIn)) {
       _log.severe('Trying to show achievements when not logged in.');
       return;
     }
@@ -72,8 +78,8 @@ class GamesServicesController {
   }
 
   /// Launches the platform's UI overlay with leaderboard(s).
-  Future<void> showLeaderboard() async {
-    if (!await signedIn) {
+  static Future<void> showLeaderboard(Ref ref) async {
+    if (!await ref.watch(signedIn)) {
       _log.severe('Trying to show leaderboard when not logged in.');
       return;
     }
@@ -90,8 +96,8 @@ class GamesServicesController {
   }
 
   /// Submits [score] to the leaderboard.
-  Future<void> submitLeaderboardScore(Score score) async {
-    if (!await signedIn) {
+  static Future<void> submitLeaderboardScore(Ref ref, {required Score score}) async {
+    if (!await ref.watch(signedIn)) {
       _log.warning('Trying to submit leaderboard when not logged in.');
       return;
     }

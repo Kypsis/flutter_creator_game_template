@@ -15,57 +15,57 @@ class WinGameScreen extends StatelessWidget {
   const WinGameScreen({super.key, required this.score});
 
   @override
-  Widget build(
-    BuildContext context,
-  ) {
+  Widget build(BuildContext context) {
     const gap = SizedBox(height: 10);
 
-    final adsControllerAvailable = context.ref.watch(AdsController.preloadedAd) != null;
+    return Watcher((context, ref, _) {
+      final adsControllerAvailable = context.ref.watch(AdsController.preloadedAd) != null;
 
-    final adsRemoved = InAppPurchaseController.subscription != null
-        ? context.ref.watch(InAppPurchaseController.adRemoval).maybeMap(
-              active: (value) => true,
-              orElse: () => false,
-            )
-        : false;
+      final adsRemoved = InAppPurchaseController.subscription != null
+          ? context.ref.watch(InAppPurchaseController.adRemoval).maybeMap(
+                active: (value) => true,
+                orElse: () => false,
+              )
+          : false;
 
-    return Scaffold(
-      backgroundColor: context.ref.watch(paletteCreator).backgroundPlaySession,
-      body: ResponsiveScreen(
-        squarishMainArea: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            if (adsControllerAvailable && !adsRemoved) ...[
-              const Expanded(
-                child: Center(
-                  child: BannerAdWidget(),
+      return Scaffold(
+        backgroundColor: context.ref.watch(paletteCreator).backgroundPlaySession,
+        body: ResponsiveScreen(
+          squarishMainArea: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              if (adsControllerAvailable && !adsRemoved) ...[
+                const Expanded(
+                  child: Center(
+                    child: BannerAdWidget(),
+                  ),
+                ),
+              ],
+              gap,
+              const Center(
+                child: Text(
+                  'You won!',
+                  style: TextStyle(fontFamily: 'Permanent Marker', fontSize: 50),
+                ),
+              ),
+              gap,
+              Center(
+                child: Text(
+                  'Score: ${score.score}\n'
+                  'Time: ${score.formattedTime}',
+                  style: const TextStyle(fontFamily: 'Permanent Marker', fontSize: 20),
                 ),
               ),
             ],
-            gap,
-            const Center(
-              child: Text(
-                'You won!',
-                style: TextStyle(fontFamily: 'Permanent Marker', fontSize: 50),
-              ),
-            ),
-            gap,
-            Center(
-              child: Text(
-                'Score: ${score.score}\n'
-                'Time: ${score.formattedTime}',
-                style: const TextStyle(fontFamily: 'Permanent Marker', fontSize: 20),
-              ),
-            ),
-          ],
+          ),
+          rectangularMenuArea: ElevatedButton(
+            onPressed: () {
+              GoRouter.of(context).pop();
+            },
+            child: const Text('Continue'),
+          ),
         ),
-        rectangularMenuArea: ElevatedButton(
-          onPressed: () {
-            GoRouter.of(context).pop();
-          },
-          child: const Text('Continue'),
-        ),
-      ),
-    );
+      );
+    });
   }
 }

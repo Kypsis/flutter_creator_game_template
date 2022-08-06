@@ -2,6 +2,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// Use `package:shared_preferences`.
 class LocalStorageSettingsPersistence {
+  const LocalStorageSettingsPersistence._();
+
   static final Future<SharedPreferences> instanceFuture = SharedPreferences.getInstance();
 
   static Future<bool> getMusicOn() async {

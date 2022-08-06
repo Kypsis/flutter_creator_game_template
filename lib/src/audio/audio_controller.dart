@@ -14,7 +14,7 @@ import 'sounds.dart';
 
 // TODO: check if later versions of flame_audio (and underlying audioplayers library) has fixed audio on android
 class AudioController {
-  AudioController._();
+  const AudioController._();
 
   static final _log = Logger('AudioController');
 

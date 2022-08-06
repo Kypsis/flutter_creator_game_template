@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:creator/creator.dart';
 import 'package:flutter/material.dart';
-import 'package:game_template/main.dart';
 import 'package:game_template/src/ads/ads_controller.dart';
 import 'package:game_template/src/audio/audio_controller.dart';
+import 'package:game_template/src/games_services/games_services.dart';
 import 'package:game_template/src/in_app_purchase/in_app_purchase_controller.dart';
 import 'package:game_template/src/player_progress/player_progress_controller.dart';
 import 'package:game_template/src/style/palette.dart';
@@ -147,15 +147,16 @@ class PlaySessionScreenState extends State<PlaySessionScreen> {
 
     AudioController.playSfx(context.ref, type: SfxType.congrats);
 
-    if (gamesServicesControllerCreator != null) {
+    if (context.ref.watch(GamesServicesController.signedIn.asyncData).data == true) {
       if (widget.level.awardsAchievement) {
-        await context.ref.read(gamesServicesControllerCreator!).awardAchievement(
-              android: widget.level.achievementIdAndroid!,
-              iOS: widget.level.achievementIdIOS!,
-            );
+        await GamesServicesController.awardAchievement(
+          context.ref,
+          android: widget.level.achievementIdAndroid!,
+          iOS: widget.level.achievementIdIOS!,
+        );
       }
 
-      await context.ref.read(gamesServicesControllerCreator!).submitLeaderboardScore(score);
+      await GamesServicesController.submitLeaderboardScore(context.ref, score: score);
     }
 
     /// Give the player some time to see the celebration animation.

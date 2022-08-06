@@ -2,6 +2,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// Use `package:shared_preferences`.
 class LocalStoragePlayerProgressPersistence {
+  const LocalStoragePlayerProgressPersistence._();
+
   static final Future<SharedPreferences> instanceFuture = SharedPreferences.getInstance();
 
   static Future<int> getHighestLevelReached() async {

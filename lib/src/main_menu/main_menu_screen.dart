@@ -1,6 +1,5 @@
 import 'package:creator/creator.dart';
 import 'package:flutter/material.dart';
-import 'package:game_template/main.dart';
 import 'package:game_template/src/audio/audio_controller.dart';
 import 'package:game_template/src/games_services/games_services.dart';
 import 'package:game_template/src/settings/settings_controller.dart';
@@ -15,10 +14,6 @@ class MainMenuScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final GamesServicesController? gamesServicesController = gamesServicesControllerCreator != null
-        ? CreatorGraphData.of(context).ref.watch(gamesServicesControllerCreator!)
-        : null;
-
     return Watcher((context, ref, _) {
       return Scaffold(
         backgroundColor: ref.watch(paletteCreator).backgroundMain,
@@ -49,19 +44,19 @@ class MainMenuScreen extends StatelessWidget {
                 child: const Text('Play'),
               ),
               _gap,
-              if (gamesServicesController != null) ...[
+              if (ref.watch(GamesServicesController.signedIn.asyncData).data == true) ...[
                 _hideUntilReady(
-                  ready: gamesServicesController.signedIn,
+                  ready: ref.watch(GamesServicesController.signedIn),
                   child: ElevatedButton(
-                    onPressed: () => gamesServicesController.showAchievements(),
+                    onPressed: () => GamesServicesController.showAchievements(ref),
                     child: const Text('Achievements'),
                   ),
                 ),
                 _gap,
                 _hideUntilReady(
-                  ready: gamesServicesController.signedIn,
+                  ready: ref.watch(GamesServicesController.signedIn),
                   child: ElevatedButton(
-                    onPressed: () => gamesServicesController.showLeaderboard(),
+                    onPressed: () => GamesServicesController.showLeaderboard(ref),
                     child: const Text('Leaderboard'),
                   ),
                 ),

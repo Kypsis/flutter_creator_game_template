@@ -9,6 +9,8 @@ import 'ad_removal_state.gen.dart';
 
 /// Allows buying in-app. Facade of `package:in_app_purchase`.
 class InAppPurchaseController {
+  const InAppPurchaseController._();
+
   static final Logger _log = Logger('InAppPurchases');
 
   static StreamSubscription<List<PurchaseDetails>>? subscription;
