@@ -66,7 +66,7 @@ lib
 └── main.dart
 ```
 
-State management uses Riverpod (hooks_riverpod).
+State management uses Creator.
 
 
 ## Building for production
