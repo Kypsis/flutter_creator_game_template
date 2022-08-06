@@ -190,10 +190,8 @@ class _MyAppState extends State<MyApp> {
       null,
       listener: (ref) {
         ref.watch(SettingsController.muted);
-        AudioController.mutedHandler(ref);
-
         ref.watch(SettingsController.musicOn);
-        AudioController.musicOnHandler(ref);
+        AudioController.musicHandler(ref);
       },
       child: MaterialApp.router(
         title: 'Flutter Demo',

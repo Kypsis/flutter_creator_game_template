@@ -1,6 +1,7 @@
 import 'dart:collection';
 import 'dart:math';
 
+import 'package:audioplayers/audioplayers.dart' hide Logger;
 import 'package:creator/creator.dart';
 import 'package:flame_audio/audio_pool.dart';
 import 'package:flame_audio/flame_audio.dart';
@@ -39,13 +40,12 @@ class AudioController {
     FlameAudio.bgm.initialize();
     FlameAudio.bgm.audioPlayer?.onPlayerCompletion.listen(_changeSong);
 
-    if (!ref.watch(SettingsController.muted) && ref.watch(SettingsController.musicOn)) {
-      _startMusic();
-    }
+    /* if (!ref.watch(SettingsController.muted) && ref.watch(SettingsController.musicOn)) {
+      await FlameAudio.bgm.play("music/${_playlist.first.filename}");
+    } */
   }
 
   static void dispose() {
-    _stopAllSound();
     FlameAudio.bgm.dispose();
     FlameAudio.audioCache.clearAll();
     _audioCache.clear();
@@ -86,49 +86,51 @@ class AudioController {
     FlameAudio.bgm.play("music/${_playlist.first.filename}");
   }
 
-  static void musicOnHandler(Ref ref) {
-    if (ref.read(SettingsController.musicOn)) {
+  static void musicHandler(Ref ref) {
+    print("musicOnHandler!!!!!");
+    if (ref.read(SettingsController.musicOn) && !ref.read(SettingsController.muted)) {
       // Music got turned on.
-      if (!ref.read(SettingsController.muted)) {
-        _resumeMusic();
-      }
+      _resumeMusic();
     } else {
       // Music got turned off.
       _stopMusic();
     }
   }
 
-  static void mutedHandler(Ref ref) {
-    if (ref.read(SettingsController.muted)) {
-      // All sound just got muted.
-      _stopAllSound();
-    } else {
-      // All sound just got un-muted.
-      if (ref.read(SettingsController.musicOn)) {
-        _resumeMusic();
-      }
-    }
-  }
-
   static Future<void> _resumeMusic() async {
     _log.info('Resuming music');
 
-    try {
-      await FlameAudio.bgm.resume();
-    } catch (e) {
-      // Sometimes, resuming fails with an "Unexpected" error.
-      _log.severe(e);
-      await FlameAudio.bgm.play("music/${_playlist.first.filename}");
+    switch (FlameAudio.bgm.audioPlayer?.state) {
+      case PlayerState.PAUSED:
+        _log.info('Calling _musicPlayer.resume()');
+        try {
+          await FlameAudio.bgm.resume();
+        } catch (e) {
+          // Sometimes, resuming fails with an "Unexpected" error.
+          _log.severe(e);
+          await FlameAudio.bgm.play("music/${_playlist.first.filename}");
+        }
+        break;
+      case PlayerState.STOPPED:
+        _log.info("resumeMusic() called when music is stopped. "
+            "This probably means we haven't yet started the music. "
+            "For example, the game was started with sound off.");
+        await FlameAudio.bgm.play("music/${_playlist.first.filename}");
+        break;
+      case PlayerState.PLAYING:
+        _log.warning('resumeMusic() called when music is playing. '
+            'Nothing to do.');
+        break;
+      case PlayerState.COMPLETED:
+        _log.warning('resumeMusic() called when music is completed. '
+            "Music should never be 'completed' as it's either not playing "
+            "or looping forever.");
+        await FlameAudio.bgm.play("music/${_playlist.first.filename}");
+        break;
+      default:
+        await FlameAudio.bgm.play("music/${_playlist.first.filename}");
+        break;
     }
-  }
-
-  static void _startMusic() {
-    _log.info('starting music');
-    FlameAudio.bgm.play("music/${_playlist.first.filename}");
-  }
-
-  static void _stopAllSound() {
-    FlameAudio.bgm.pause();
   }
 
   static void _stopMusic() {
