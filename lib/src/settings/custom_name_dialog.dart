@@ -20,9 +20,11 @@ class CustomNameDialog extends HookWidget {
     final controller = useTextEditingController();
 
     useEffect(() {
-      controller.text = context.ref.read(SettingsController.playerName);
+      Future.microtask(() {
+        controller.text = context.ref.read(SettingsController.playerName);
+      });
       return null;
-    });
+    }, []);
 
     return ScaleTransition(
       scale: CurvedAnimation(

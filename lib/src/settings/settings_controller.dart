@@ -9,10 +9,10 @@ import 'persistence/settings_persistence.dart';
 class SettingsController {
   SettingsController._();
 
-  static final playerName = Creator.value("Player");
-  static final muted = Creator.value(false);
-  static final musicOn = Creator.value(true);
-  static final soundsOn = Creator.value(true);
+  static final playerName = Creator.value("Player", keepAlive: true);
+  static final muted = Creator.value(false, keepAlive: true);
+  static final musicOn = Creator.value(true, keepAlive: true);
+  static final soundsOn = Creator.value(true, keepAlive: true);
 
   static final SettingsPersistence _persistence = LocalStorageSettingsPersistence();
 
